@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from controller.random.RandomController import RandomController
-from rl_env.WRSN_clean import WRSN
+from rl_env.WRSN import WRSN
 
 
 def log(net, mcs):
@@ -26,16 +26,9 @@ for id, _ in enumerate(network.net.targets_active):
     if _ == 0:
         print(id)
 
-#network.env.process(log(network.net, network.agents))   
 while not request["terminal"]:
-    # print(request["agent_id"], request["action"], request["detailed_rewards"], request["terminal"])
     print(request["agent_id"], request["action"], request["terminal"])
-    
     action = controller.make_action(request["agent_id"], request["state"], request["info"], network)
-    
-    # state = request["state"]
-    # action = np.copy(state[0] + state[1] - 10 * state[2] + state[3])
-
     request = network.step(request["agent_id"], action)
     
 print(network.net.env.now)
