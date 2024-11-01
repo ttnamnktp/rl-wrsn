@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from controller.random.RandomController import RandomController
-from rl_env.WRSN_clean import WRSN
+from rl_env.WRSN import WRSN
 
 
 def log(net, mcs):
