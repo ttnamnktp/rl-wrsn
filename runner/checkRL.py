@@ -6,8 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from controller.random.RandomController import RandomController
-from rl_env.WRSN import WRSN
-from utils import draw_heatmap_state
+from rl_env.WRSN_clean import WRSN
 
 
 def log(net, mcs):
@@ -19,7 +18,7 @@ def log(net, mcs):
 
 network = WRSN(scenario_path="physical_env/network/network_scenarios/hanoi1000n50.yaml"
                ,agent_type_path="physical_env/mc/mc_types/default.yaml"
-               ,num_agent=3, map_size=100,density_map=True)
+               ,num_agent=3)
 controller = RandomController()
 
 request = network.reset()
@@ -31,7 +30,12 @@ for id, _ in enumerate(network.net.targets_active):
 while not request["terminal"]:
     # print(request["agent_id"], request["action"], request["detailed_rewards"], request["terminal"])
     print(request["agent_id"], request["action"], request["terminal"])
+    
     action = controller.make_action(request["agent_id"], request["state"], request["info"], network)
+    
+    # state = request["state"]
+    # action = np.copy(state[0] + state[1] - 10 * state[2] + state[3])
+
     request = network.step(request["agent_id"], action)
     
 print(network.net.env.now)

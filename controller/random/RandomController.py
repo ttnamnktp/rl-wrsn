@@ -1,15 +1,21 @@
-import random
 import numpy as np
-from scipy.optimize import minimize, basinhopping, differential_evolution
-from scipy.spatial.distance import euclidean
-import matplotlib.pyplot as plt
-import torch
 class RandomController:
     def __init__(self):
-        self.unet = None
+        pass
 
     def make_action(self, id, state, info, wrsn):
+        """_summary_
+
+        Args:
+            id (_type_): _description_
+            state (_type_): _description_
+            info (_type_): _description_
+            wrsn (_type_): _description_
+
+        Returns:
+            _type_: hành động gồm ba thành phần là địa điểm (x,y), thời gian sạc ngẫu nhiên
+        """
         if id == None:
             return None
-        return np.copy(state[0] + state[1] - 10 * state[2] + state[3])
+        return np.random.rand(3)
 
