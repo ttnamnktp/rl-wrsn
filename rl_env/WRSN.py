@@ -126,6 +126,7 @@ class WRSN(gym.Env):
                     self.agents_exclusive_reward[agent.id] += incentive
             yield self.env.timeout(1.0)
             
+    
     def get_state(self, agent_id):
         agent = self.agents[agent_id]
         unit = 1.0 / self.map_size
