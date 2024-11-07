@@ -9,6 +9,7 @@ from scipy.spatial.distance import euclidean
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from physical_env.network.NetworkIO import NetworkIO
 from physical_env.mc.MobileCharger import MobileCharger
+from rl_env.state_representation.StateRepresentation import GraphRepresentation
     
 class WRSN(gym.Env):
     def __init__(self, scenario_path, agent_type_path, num_agent, warm_up_time = 100):
@@ -24,6 +25,8 @@ class WRSN(gym.Env):
         self.agents_prev_state = [None for _ in range(num_agent)]
         self.agents_exclusive_reward = [0 for _ in range(num_agent)]
         self.reset()
+        # create graph
+        self.graph = GraphRepresentation.get_graph_representation(self.net)
 
     def reset(self):
         self.env, self.net = self.scenario_io.makeNetwork()
@@ -78,13 +81,9 @@ class WRSN(gym.Env):
         - Cập nhật điểm thưởng độc quyền (agents_exclusive_reward) của từng tác nhân, giúp đánh giá hiệu suất của chúng trong việc kéo dài thời gian sống của các node.
         """
         yield self.env.timeout(0)
-
-            
+        
     def get_state(self, agent_id):
         """
-        Hàm này là đầu vào cho policy, hiện tại đang là bốn cái map tương ứng với bốn
-        trạng thái theo dõi mạng
-        Nếu sửa thì bắt đầu từ hàm này
         :param agent_id:
         :return:
         """
