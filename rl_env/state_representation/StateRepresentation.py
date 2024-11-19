@@ -53,7 +53,6 @@ class GraphRepresentation:
         # print(embeddings)
         return embeddings
 
-
     @staticmethod
     def train(model, optimizer, data):
         model.train()

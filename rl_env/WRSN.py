@@ -140,8 +140,16 @@ class WRSN(gym.Env):
         Returns:
             float: Phần thưởng của tác nhân
         """
-
-        return None
+        
+        prev_state = self.agents_prev_state[agent_id]
+        curr_state = self.get_state(agent_id)
+        prev_energy = prev_state[:, -1].numpy()
+        curr_energy = curr_state[:, -1].numpy()
+        
+        reward = (curr_energy.min()/curr_energy.max()) - (prev_energy.min()/prev_energy.max())
+        print("---- reward ----")
+        print(reward)
+        return reward
 
     def get_network_fitness(self):
         node_t = [-1 for node in self.net.listNodes]
@@ -192,6 +200,7 @@ class WRSN(gym.Env):
             if agent.status != 0:
                 general_process = general_process | self.agents_process[id]
         self.env.run(until=general_process)
+        print(self.env.now)
         if self.net.alive == 0:
             return {"agent_id":None, 
                     "prev_state": None,
