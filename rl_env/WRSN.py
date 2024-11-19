@@ -137,6 +137,7 @@ class WRSN(gym.Env):
             if agent.status != 0:
                 general_process = general_process | self.agents_process[id]
         self.env.run(until=general_process)
+        print(self.env.now)
         if self.net.alive == 0:
             return {"agent_id":None, 
                     "prev_state": None,

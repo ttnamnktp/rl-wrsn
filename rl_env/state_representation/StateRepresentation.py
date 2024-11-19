@@ -24,11 +24,11 @@ class GraphRepresentation:
         num_features = data.x.size(1)  
         num_classes = len(net.listChargingLocations) + 1
         hidden_dim = 512
-        output_dim = 83 # chưa tối ưu, lấy bằng số node trong đồ thị
+        output_dim = 16 # chưa tối ưu, lấy bằng số node trong đồ thị
         GNN_model = GCN(num_features, hidden_dim, output_dim ,num_classes)
-        optimizer = torch.optim.Adam(GNN_model.parameters(), lr=0.0005)  # Define optimizer.
+        optimizer = torch.optim.Adam(GNN_model.parameters(), lr=0.00007)  # Define optimizer.
         # Huấn luyện mô hình
-        for epoch in range(500):
+        for epoch in range(10):
             loss = GraphRepresentation.train(GNN_model, optimizer, data)
             if epoch % 10 == 0:
                 acc = GraphRepresentation.test(GNN_model, data)
@@ -39,9 +39,9 @@ class GraphRepresentation:
         with torch.no_grad():
             _, embeddings = GNN_model(data.x, data.edge_index)
         
-        for i, row in enumerate(embeddings):
-            for j, value in enumerate(row):
-                print(f"Element at [{i}, {j}]: {value.item()}")
+        # for i, row in enumerate(embeddings):
+        #     for j, value in enumerate(row):
+        #         print(f"Element at [{i}, {j}]: {value.item()}")
         return embeddings 
     
     @staticmethod
