@@ -5,12 +5,15 @@ from gym import spaces
 import numpy as np
 import sys
 import os
+root_dir = os.getcwd()
+import torch
 from scipy.spatial.distance import euclidean
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from physical_env.network.NetworkIO import NetworkIO
 from physical_env.mc.MobileCharger import MobileCharger
 from rl_env.state_representation.StateRepresentation import GraphRepresentation
-    
+from rl_env.state_representation.GNN import GCN
+
 class WRSN(gym.Env):
     def __init__(self, scenario_path, agent_type_path, num_agent, warm_up_time = 100):
         self.scenario_io = NetworkIO(scenario_path)
@@ -23,10 +26,13 @@ class WRSN(gym.Env):
         self.agents_process = [None for _ in range(num_agent)]
         self.agents_action = [None for _ in range(num_agent)]
         self.agents_prev_state = [None for _ in range(num_agent)]
+        self.agents_prev_fitness = [None for _ in range(num_agent)]
         self.agents_exclusive_reward = [0 for _ in range(num_agent)]
+
         self.reset()
         # create graph
-        self.graph = GraphRepresentation.get_graph_representation(self.net)
+        self.graph = GraphRepresentation
+        self.graph.num_nodes = len(self.net.listNodes)
 
     def reset(self):
         self.env, self.net = self.scenario_io.makeNetwork()
@@ -87,22 +93,94 @@ class WRSN(gym.Env):
         :param agent_id:
         :return:
         """
-        return None
-    
+        model_path = os.path.join(root_dir, "rl_env", "grap_model.pth")
+        data = GraphRepresentation.create_graph(self.net)
+        num_features = data.x.size(1)
+        num_classes = len(self.net.listChargingLocations) + 1
+        hidden_dim = 512
+        output_dim = 83 # số lượng lớp đầu ra, ví dụ
+        GNN_model = GCN(num_features, hidden_dim, output_dim, num_classes)
+
+        # Tải lại trạng thái của mô hình từ file
+        GNN_model.load_state_dict(torch.load(model_path))
+
+        # Chuyển mô hình sang chế độ đánh giá
+        GNN_model.eval()
+        # Thực hiện suy luận với dữ liệu mới
+        with torch.no_grad():
+            # Giả sử data là dữ liệu mới với cấu trúc tương tự `data.x` và `data.edge_index`
+            _, embeddings = GNN_model(data.x, data.edge_index)
+        enegy = self.get_enegy()
+        embeddings = torch.cat((embeddings, enegy), 1)
+        return embeddings
+
+    def get_enegy(self):
+        arr_energy = []
+        for node in self.net.listNodes:
+            arr_energy.append(node.energy/self.scenario_io.node_phy_spe["capacity"])
+
+        arr_energy.append(1)
+        arr_energy = torch.tensor(arr_energy)
+        tensor_energy = arr_energy.view(-1,1)
+        return tensor_energy
+
     def get_reward(self, agent_id):
-        """_summary_
+        """
         Đánh giá hiệu quả của một tác nhân trong việc:
         - Cải thiện hoặc duy trì thời gian của mạng (toàn bộ node).
         - Đóng góp riêng cho các node mà tác nhân đó trực tiếp sạc.
         Args:
-            agent_id (_type_): id của tác tử được tính toán phần thưởng
+            agent_id (int): id của tác tử được tính toán phần thưởng
 
         Returns:
-            _type_: double
-            Phần thưởng của tác nhân
+            float: Phần thưởng của tác nhân
         """
-        return None
-    
+        
+        prev_state = self.agents_prev_state[agent_id]
+        curr_state = self.get_state(agent_id)
+        prev_energy = prev_state[:, -1].numpy()
+        curr_energy = curr_state[:, -1].numpy()
+        
+        reward = (curr_energy.min()/curr_energy.max()) - (prev_energy.min()/prev_energy.max())
+        print("---- reward ----")
+        print(reward)
+        return reward
+
+    def get_network_fitness(self):
+        node_t = [-1 for node in self.net.listNodes]
+        tmp1 = []
+        tmp2 = []
+        for node in self.net.baseStation.direct_nodes:
+            if node.status == 1:
+                tmp1.append(node)
+                if node.energyCS == 0:
+                    node_t[node.id] = float("inf")
+                else:
+                    node_t[node.id] = (node.energy - node.threshold) / (node.energyCS)
+        while True:
+            if len(tmp1) == 0:
+                break
+            for node in tmp1:
+                for neighbor in node.neighbors:
+                    if neighbor.status != 1:
+                        continue
+                    if neighbor.energyCS == 0:
+                        neighborLT = float("inf")
+                    else:
+                        neighborLT = (neighbor.energy - neighbor.threshold) / (neighbor.energyCS)
+                    if node_t[neighbor.id] == -1 or (
+                            node_t[node.id] > node_t[neighbor.id] and neighborLT > node_t[neighbor.id]):
+                        tmp2.append(neighbor)
+                        node_t[neighbor.id] = min(neighborLT, node_t[node.id])
+
+            tmp1 = tmp2[:]
+            tmp2.clear()
+        target_t = [0 for target in self.net.listTargets]
+        for node in self.net.listNodes:
+            for target in node.listTargets:
+                target_t[target.id] = max(target_t[target.id], node_t[node.id])
+        return np.array(target_t)
+
     def step(self, agent_id, input_action):
         if agent_id is not None:
             action = np.array(input_action)

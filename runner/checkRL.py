@@ -27,7 +27,7 @@ for id, _ in enumerate(network.net.targets_active):
         print(id)
 
 while not request["terminal"]:
-    print(request["agent_id"], request["action"], request["terminal"])
+    # print(request["agent_id"], request["action"], request["terminal"])
     action = controller.make_action(request["agent_id"], request["state"], request["info"], network)
     request = network.step(request["agent_id"], action)
     
