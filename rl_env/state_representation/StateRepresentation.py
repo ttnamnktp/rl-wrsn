@@ -9,9 +9,6 @@ from physical_env.network.Network import Network
 from physical_env.network.Node import Node
 from physical_env.network.BaseStation import BaseStation
 from rl_env.state_representation.GNN import GCN
-import os
-root_dir = os.getcwd()
-
 
 class GraphRepresentation:
     def __init__(self):
@@ -19,7 +16,6 @@ class GraphRepresentation:
     
     @staticmethod
     def get_graph_representation(net: Network):
-        model_path = os.path.join(root_dir, "rl_env", "grap_model.pth")
         data = GraphRepresentation.create_graph(net)
         num_features = data.x.size(1)  
         num_classes = len(net.listChargingLocations) + 1
@@ -34,7 +30,6 @@ class GraphRepresentation:
                 acc = GraphRepresentation.test(GNN_model, data)
                 print(f'Epoch {epoch}, Loss: {loss:.4f}, Test Accuracy: {acc:.4f}')
         # Trả về biểu diễn nhúng sau khi huấn luyện
-        torch.save(GNN_model.state_dict(), model_path)
         GNN_model.eval()  # Chuyển sang chế độ đánh giá
         with torch.no_grad():
             _, embeddings = GNN_model(data.x, data.edge_index)

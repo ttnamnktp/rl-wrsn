@@ -2,17 +2,13 @@ import yaml
 import copy
 import gym
 from gym import spaces
-import torch
-
 import numpy as np
 import sys
 import os
 from scipy.spatial.distance import euclidean
-root_dir = os.getcwd()
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from physical_env.network.NetworkIO import NetworkIO
 from physical_env.mc.MobileCharger import MobileCharger
-from rl_env.state_representation.GNN import GCN
 from rl_env.state_representation.StateRepresentation import GraphRepresentation
     
 class WRSN(gym.Env):
@@ -91,22 +87,9 @@ class WRSN(gym.Env):
         :param agent_id:
         :return:
         """
-        model_path = os.path.join(root_dir, "rl_env", "grap_model.pth")
-        data = GraphRepresentation.create_graph(self.net)
-        num_features = data.x.size(1)
-        num_classes = len(self.net.listChargingLocations) + 1
-        hidden_dim = 512
-        output_dim = 83
-        GNN_model = GCN(num_features, hidden_dim, output_dim, num_classes)
-
-        GNN_model.load_state_dict(torch.load(model_path))
-        GNN_model.eval()
-        with torch.no_grad():
-            _, embeddings = GNN_model(data.x, data.edge_index)
-        enegy = self.get_enegy()
-        embeddings = torch.cat((embeddings, enegy), 1)
-        return embeddings
-    def get_reward(self, agent_id = 0):
+        return None
+    
+    def get_reward(self, agent_id):
         """_summary_
         Đánh giá hiệu quả của một tác nhân trong việc:
         - Cải thiện hoặc duy trì thời gian của mạng (toàn bộ node).
@@ -118,10 +101,6 @@ class WRSN(gym.Env):
             _type_: double
             Phần thưởng của tác nhân
         """
-
-
-
-
         return None
     
     def step(self, agent_id, input_action):
